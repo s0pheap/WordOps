@@ -79,6 +79,10 @@ class WOSiteCreateController(CementBaseController):
                 dict(help="choose dns provider api for letsencrypt",
                      action='store' or 'store_const',
                      const='dns_cf', nargs='?')),
+            (['--webroot'],
+                dict(help="use HTTP validation (webroot) with acme.sh instead of DNS",
+                     action='store',
+                     nargs='?')),
             (['--dnsalias'],
                 dict(help="set domain used for acme dns alias validation",
                      action='store', nargs='?')),
@@ -113,6 +117,7 @@ class WOSiteCreateController(CementBaseController):
         # Check domain name validation
         data = dict()
         host, port = None, None
+        php_version = None
         try:
             stype, cache = detSitePar(vars(pargs))
         except RuntimeError as e:
@@ -176,7 +181,7 @@ class WOSiteCreateController(CementBaseController):
 
         if stype == 'proxy':
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=True, basic=False, wp=False,
                 wpfc=False, wpsc=False, wprocket=False, wpce=False,
                 multisite=False, wpsubdir=False, webroot=wo_site_webroot)
@@ -187,7 +192,7 @@ class WOSiteCreateController(CementBaseController):
 
         if stype == 'alias':
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=True, basic=False, wp=False,
                 wpfc=False, wpsc=False, wprocket=False, wpce=False,
                 multisite=False, wpsubdir=False, webroot=wo_site_webroot)
@@ -209,7 +214,7 @@ class WOSiteCreateController(CementBaseController):
                           .format(subsiteof_name))
 
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=False, basic=False, multisite=False, webroot=wo_site_webroot)
 
             data["wp"] = parent_site_info.site_type == 'wp'
@@ -227,7 +232,7 @@ class WOSiteCreateController(CementBaseController):
         if (pargs.php74 or pargs.php80 or pargs.php81 or
                 pargs.php82 or pargs.php83 or pargs.php84):
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=False, basic=False,
                 wp=False, wpfc=False, wpsc=False, wprocket=False,
                 wpce=False, multisite=False,
@@ -236,7 +241,7 @@ class WOSiteCreateController(CementBaseController):
 
         if stype in ['html', 'php']:
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=True, basic=False, wp=False,
                 wpfc=False, wpsc=False, wprocket=False, wpce=False,
                 multisite=False, wpsubdir=False, webroot=wo_site_webroot)
@@ -248,7 +253,7 @@ class WOSiteCreateController(CementBaseController):
         elif stype in ['mysql', 'wp', 'wpsubdir', 'wpsubdomain']:
 
             data = dict(
-                site_name=wo_domain, www_domain=wo_www_domain,
+                site_name=wo_domain,
                 static=False, basic=True, wp=False, wpfc=False,
                 wpsc=False, wpredis=False, wprocket=False, wpce=False,
                 multisite=False, wpsubdir=False, webroot=wo_site_webroot,
@@ -455,8 +460,9 @@ class WOSiteCreateController(CementBaseController):
                               "and please try again")
 
             # Setup WordPress if Wordpress site
-            if data['wp']:
+            if data.get('wp'):
                 vhostonly = bool(pargs.vhostonly)
+                wo_wp_creds = {}
                 try:
                     wo_wp_creds = setupwordpress(self, data, vhostonly)
                     # Add database information for site into database
@@ -528,7 +534,7 @@ class WOSiteCreateController(CementBaseController):
                 for msg in wo_auth:
                     Log.info(self, Log.ENDC + msg, log=False)
 
-            if data['wp'] and (not pargs.vhostonly):
+            if data.get('wp') and (not pargs.vhostonly):
                 Log.info(self, Log.ENDC + "WordPress admin user :"
                          " {0}".format(wo_wp_creds['wp_user']), log=False)
                 Log.info(self, Log.ENDC + "WordPress admin password : {0}"
@@ -548,7 +554,7 @@ class WOSiteCreateController(CementBaseController):
             letsencrypt = True
             Log.debug(self, "Going to issue Let's Encrypt certificate")
             acmedata = dict(
-                acme_domains, dns=False, acme_dns='dns_cf',
+                dns=False, acme_dns='dns_cf',
                 dnsalias=False, acme_alias='', keylength='')
             if self.app.config.has_section('letsencrypt'):
                 acmedata['keylength'] = self.app.config.get(
@@ -561,6 +567,9 @@ class WOSiteCreateController(CementBaseController):
                 if not pargs.dns == 'dns_cf':
                     Log.debug(self, "DNS API : {0}".format(pargs.dns))
                     acmedata['acme_dns'] = pargs.dns
+            if pargs.webroot:
+                Log.debug(self, "Webroot validation enabled")
+                acmedata['webroot'] = True
             if pargs.dnsalias:
                 Log.debug(self, "DNS Alias enabled")
                 acmedata['dnsalias'] = True

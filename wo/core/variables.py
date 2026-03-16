@@ -115,9 +115,11 @@ class WOVar():
         wo_mysql_host = "localhost"
 
     # WordOps stack installation variables
-    # Nginx repo and packages
+    # Nginx repo and packages - NOW USING OFFICIAL NGINX FROM NGINX.ORG
     if wo_distro == 'ubuntu':
-        wo_nginx_repo = "ppa:wordops/nginx-wo"
+        # Official Nginx repository for Ubuntu
+        wo_nginx_repo = "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ {0} nginx".format(wo_platform_codename)
+        wo_nginx_key = "https://nginx.org/keys/nginx_signing.key"
 
     else:
         if wo_distro == 'debian':
@@ -134,14 +136,11 @@ class WOVar():
                 wo_deb_repo = "Raspbian_11"
             elif wo_platform_codename == 'bookworm':
                 wo_deb_repo = "Raspbian_12"
-        # debian/raspbian nginx repository
-        wo_nginx_repo = ("deb [signed-by=/usr/share/keyrings/wordops-archive-keyring.gpg] "
-                         "http://download.opensuse.org"
-                         f"/repositories/home:/virtubox:/WordOps/{wo_deb_repo}/ /")
-        wo_nginx_key = (f"https://download.opensuse.org/repositories/home:virtubox:WordOps/{wo_deb_repo}/Release.key")
+        # Debian/Raspbian - Official Nginx repository
+        wo_nginx_repo = "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/debian/ {0} nginx".format(wo_platform_codename)
+        wo_nginx_key = "https://nginx.org/keys/nginx_signing.key"
 
-    wo_nginx = ["nginx-custom", "nginx-wo"]
-    wo_nginx_key = 'FB898660'
+    wo_nginx = ["nginx"]
 
     wo_php_versions = {
         'php74': '7.4',

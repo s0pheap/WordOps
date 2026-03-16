@@ -405,17 +405,17 @@ def post_pref(self, apt_packages, packages, upgrade=False):
                     self.msg = (self.msg + [f'WordOps backend is available on https://{server_ip}:22222 '
                                             f'or https://{WOVar.wo_fqdn}:22222'])
 
-            data = dict(release=WOVar.wo_version)
-            WOTemplate.deploy(self, '/opt/cf-update.sh',
-                              'cf-update.mustache',
-                              data, overwrite=True)
-            WOFileUtils.chmod(self, "/opt/cf-update.sh", 0o775)
-            Log.debug(self, 'Creating Cloudflare.conf')
-            WOShellExec.cmd_exec(self, '/opt/cf-update.sh')
-            WOCron.setcron_weekly(self, '/opt/cf-update.sh '
-                                  '> /dev/null 2>&1',
-                                  comment='Cloudflare IP refresh cronjob '
-                                  'added by WordOps')
+            # data = dict(release=WOVar.wo_version)
+            # WOTemplate.deploy(self, '/opt/cf-update.sh',
+            #                   'cf-update.mustache',
+            #                   data, overwrite=True)
+            # WOFileUtils.chmod(self, "/opt/cf-update.sh", 0o775)
+            # Log.debug(self, 'Creating Cloudflare.conf')
+            # WOShellExec.cmd_exec(self, '/opt/cf-update.sh')
+            # WOCron.setcron_weekly(self, '/opt/cf-update.sh '
+            #                       '> /dev/null 2>&1',
+            #                       comment='Cloudflare IP refresh cronjob '
+            #                       'added by WordOps')
 
             # Nginx Configation into GIT
             if not WOService.restart_service(self, 'nginx'):
